@@ -108,7 +108,22 @@ defined FACT
 ### As a CLI
 
 ```sh
-go install github.com/micheledinelli/golamb/cmd/golamb@latest
+go install github.com/micheledinelli/golamb@latest
+
+golamb --help
+
+# Usage of GoLamb:
+#
+# Options:
+#   -s, --strategy string
+#         Evaluation strategy: cbn, cbv, normal (default "normal")
+#
+#   -v, --version
+#         Print version information
+#
+# Examples:
+#   ./golamb --strategy=cbn
+#   ./golamb -s cbv
 ```
 
 ### Build and Run From Source
@@ -160,3 +175,5 @@ GoLamb is structured as a classical micro-compiler frontend consisting of four p
 Feel free to contribute by submitting issues or pull requests.
 
 ## License
+
+This project is licensed under the GNU GENERAL PUBLIC LICENSE License. See the [LICENSE](./LICENSE) file for details.
