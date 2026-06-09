@@ -1,11 +1,11 @@
 # GoLamb
 
-![demo](./res/demo.gif)
-
 ![go](https://img.shields.io/badge/Go-1.25-00ADD8.svg?style=plain&logo=Go&logoColor=white)
 [![Go Report Card](https://goreportcard.com/badge/github.com/micheledinelli/golamb)](https://goreportcard.com/report/github.com/micheledinelli/golamb)
 
 **GoLamb** is an interpreter for the Untyped Lambda Calculus written in Go. It serves as both an interactive playground (REPL) and a micro-compiler for lambda-expressions.
+
+![demo](./res/demo.gif)
 
 ## Examples and Syntax
 
