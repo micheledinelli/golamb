@@ -1,6 +1,6 @@
 # GoLamb
 
-![mascotte](./mascotte.png)
+![demo](./res/demo.gif)
 
 ![go](https://img.shields.io/badge/Go-1.25-00ADD8.svg?style=plain&logo=Go&logoColor=white)
 [![Go Report Card](https://goreportcard.com/badge/github.com/micheledinelli/golamb)](https://goreportcard.com/report/github.com/micheledinelli/golamb)
@@ -18,7 +18,7 @@
 y
 >
 > id = \x.x
-defined id
+id = \x.x
 >
 > id
 \x.x
@@ -52,17 +52,17 @@ Under **Call By Value** the engine tries to reduce the second argument before in
 ```sh
 ./golamb
 >
-> TRUE = \t.\f.t
-defined TRUE
+> true = \t.\f.t
+true = \t.\f.t
 >
-> FALSE = \t.\f.f
-defined FALSE
+> false = \t.\f.f
+fasle = \t.\f.f
 >
-> NOT = \b.b FALSE TRUE
-defined NOT
+> not = \b.b false true
+not = \b.b false true
 >
-> NOT TRUE
-\t.\f.f # FALSE
+> not true
+\t.\f.f # false
 ```
 
 ### Import Macros From a File
@@ -164,11 +164,17 @@ GoLamb is structured as a classical micro-compiler frontend consisting of four p
 3. **Parser:** Consumes tokens using a recursive-descent strategy to construct an Abstract Syntax Tree (AST). It strictly enforces **left-associative** function applications (meaning `x y z` is parsed as `((x y) z)`) and expands lambda bodies as far to the right as possible.
 4. **Reduction Engine:** Executes pure $\beta$-reductions on the AST using explicit, capture-avoiding substitutions. It handles variable renames ($\alpha$-conversions) whenever an evaluation step threatens to capture a free variable.
 
-## Improvements
+## Future Improvements
 
 - [ ] Add [Call-By-Push-Value](https://en.wikipedia.org/wiki/Call-by-push-value) reduction strategy.
-- [ ] Make FreshName generator function more robust.
 - [ ] Add tests.
+- [ ] Highlight reduction steps.
+- [ ] Introduce types.
+- [ ] Make FreshName generator function more robust.
+
+## About the Name
+
+![mascott](./res/mascotte.webp)
 
 ## Contributing
 
