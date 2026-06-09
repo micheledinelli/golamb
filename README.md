@@ -1,0 +1,162 @@
+# GoLamb
+
+![mascotte](./mascotte.png)
+
+![go](https://img.shields.io/badge/Go-1.25-00ADD8.svg?style=plain&logo=Go&logoColor=white)
+[![Go Report Card](https://goreportcard.com/badge/github.com/micheledinelli/golamb)](https://goreportcard.com/report/github.com/micheledinelli/golamb)
+
+**GoLamb** is an interpreter for the Untyped Lambda Calculus written in Go. It serves as both an interactive playground (REPL) and a micro-compiler for lambda-expressions.
+
+## Examples and Syntax
+
+### Identity
+
+```sh
+./golamb
+>
+> (\x.x) y
+y
+>
+> id = \x.x
+defined id
+>
+> id
+\x.x
+>
+> id (\z.zw)
+\z.(z w)
+```
+
+### Reduction Strategies
+
+Under **Call By Name** or **Normal Order** the engine evaluates the outermost application first, drops the second argument completely, and returns w instantly.
+
+```sh
+./golamb -s cbn
+>
+> (\a.\b.a) w ((\x.xx)(\x.xx))
+w
+```
+
+Under **Call By Value** the engine tries to reduce the second argument before invoking the function hence getting stuck.
+
+```sh
+./golamb -s cbv
+>
+> (\a.\b.a) w ((\x.xx)(\x.xx))
+# Stuck
+```
+
+### Macros Definition
+
+```sh
+./golamb
+>
+> TRUE = \t.\f.t
+defined TRUE
+>
+> FALSE = \t.\f.f
+defined FALSE
+>
+> NOT = \b.b FALSE TRUE
+defined NOT
+>
+> NOT TRUE
+\t.\f.f # FALSE
+```
+
+### Import Macros From a File
+
+Define your macros elsewhere and import them using `:import <file>`. Macros are by convention uppercase. Take a look at [lib.lamb](./lib.lamb).
+
+```sh
+./golamb
+>
+> :import lib.lamb
+successfully imported macros from lib.lamb
+>
+> AND TRUE FALSE
+\t.\f.f # FALSE
+>
+> ID
+\x.x
+>
+> SUCC 1
+\f.\x.(f (f x)) # Church numeral 2
+>
+> ISZERO 0
+\t.\f.t # TRUE
+```
+
+### Recursive Functions
+
+```sh
+./golamb -s cbn
+>
+> :import lib.lamb
+successfully imported macros from lib.lamb
+>
+> FACT = Y FACT_GEN
+defined FACT
+>
+> FACT 3
+\f.\x.(f (f (f (f (f (f x)))))) # Church numeral 6
+```
+
+## How To Run
+
+### As a CLI
+
+```sh
+go install github.com/micheledinelli/golamb/cmd/golamb@latest
+```
+
+### Build and Run From Source
+
+```sh
+git clone https://github.com/micheledinelli/golamb
+
+cd golamb
+
+# Optional
+go build -ldflags "-s -w" -o golamb
+
+# If you built it
+./golamb --help
+# or simply
+go run main.go --help
+
+# Usage of GoLamb:
+#
+# Options:
+#   -s, --strategy string
+#         Evaluation strategy: cbn, cbv, normal (default "normal")
+#
+#   -v, --version
+#         Print version information
+#
+# Examples:
+#   ./golamb --strategy=cbn
+#   ./golamb -s cbv
+```
+
+## Design & Architecture
+
+GoLamb is structured as a classical micro-compiler frontend consisting of four phases:
+
+1. **Lexer:** Scans the input string character-by-character, translating text into a stream of tokens.
+2. **Macro Preprocessor:** Substitutes high-level macro definitions (e.g., `TRUE`, `FACT`) from environment state before the core parsing logic takes over.
+3. **Parser:** Consumes tokens using a recursive-descent strategy to construct an Abstract Syntax Tree (AST). It strictly enforces **left-associative** function applications (meaning `x y z` is parsed as `((x y) z)`) and expands lambda bodies as far to the right as possible.
+4. **Reduction Engine:** Executes pure $\beta$-reductions on the AST using explicit, capture-avoiding substitutions. It handles variable renames ($\alpha$-conversions) whenever an evaluation step threatens to capture a free variable.
+
+## Improvements
+
+- [ ] Add [Call-By-Push-Value](https://en.wikipedia.org/wiki/Call-by-push-value) reduction strategy.
+- [ ] Make FreshName generator function more robust.
+- [ ] Add tests.
+
+## Contributing
+
+Feel free to contribute by submitting issues or pull requests.
+
+## License

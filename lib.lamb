@@ -1,0 +1,43 @@
+//go:build exclude
+
+# Church numerals
+0 = \f.\x.x
+1 = \f.\x.f x
+2 = \f.\x.f(f x)
+3 = \f.\x.f(f(f x))
+
+# Church booleans
+TRUE  = \t.\f.t
+FALSE = \t.\f.f
+
+# Logic
+NOT = \b.b FALSE TRUE
+AND = \p.\q.p q p
+OR  = \p.\q.p p q
+IF  = \b.\t.\e.b t e
+
+# Combinators
+ID = \x.x
+OMEGA = (\x.xx)(\x.xx)
+
+# Fixed-point operator for Normal / CBN
+Y = \f.(\x.f(xx))(\x.f(xx))
+# Fixed-point operator for CBV
+THETA = (\x.\y.y(xxy))(\x.\y.y(xxy))
+
+# Arithmetic/Logic helpers
+SUCC = \n.\f.\x.f(n f x)
+MULT = \m.\n.\f.m(n f)
+PRED = \n.\f.\x.n(\g.\h.h(g f))(\u.x)(\u.u)
+SUB  = \m.\n.n PRED m
+ISZERO = \n.n(\x.FALSE) TRUE
+ADD = \m.\n.\f.\x.m f(n f x)
+LEQ1 = \n.ISZERO(PRED n)
+
+# Some recursive functions (Factorial)
+FACT_GEN = \f.\n. IF (ISZERO n) 1 (MULT n (f (PRED n)))
+
+# For CBN
+# FACT = Y FACT
+# For CBV
+# FACT = THETA FACT
