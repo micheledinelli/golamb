@@ -1,4 +1,4 @@
-package lc
+package src
 
 import (
 	"bufio"
@@ -109,16 +109,17 @@ func ParseArgs() (strategy RedStrategy) {
 	switch strings.ToLower(*stratFlag) {
 	case "cbv", "call-by-value":
 		strategy = CallByValue
-		fmt.Println("using strategy: Call-by-Value (Eager, strict)")
+		fmt.Printf("reduction strategy: call-by-value")
 	case "cbn", "call-by-name":
 		strategy = CallByName
-		fmt.Println("using strategy: Call-by-Name (Lazy, stops at lambdas)")
+		fmt.Printf("reduction strategy: call-by-name")
 	case "normal", "normal-order":
 		strategy = NormalOrder
-		fmt.Println("using strategy: Normal Order (Lazy, full reduction)")
+		fmt.Printf("reduction strategy: normal order")
 	default:
-		fmt.Printf("unknown strategy %q, defaulting to Normal Order\n", *stratFlag)
+		fmt.Printf("unknown strategy %q, defaulting to normal order", *stratFlag)
 		strategy = NormalOrder
 	}
+
 	return
 }

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	lc "github.com/micheledinelli/golamb/lc"
+	lc "github.com/micheledinelli/golamb/src"
 	"golang.org/x/term"
 )
 
@@ -14,7 +14,17 @@ func main() {
 	var err error
 	var oldState *term.State
 	var strategy lc.RedStrategy = lc.ParseArgs()
-	var screen *term.Terminal = term.NewTerminal(os.Stdin, "> ")
+	var screen *term.Terminal = term.NewTerminal(os.Stdin, "golamb> ")
+
+	fmt.Fprintf(screen, `
+             _              _     
+  ____  ___ | | _____ ____ | |__  
+ / _  |/ _ \| |(____ |    \|  _ \ 
+( (_| | |_| | |/ ___ | | | | |_) )
+ \___ |\___/ \_)_____|_|_|_|____/ 
+(_____|`+"\x1b[32m Version %s\x1b[0m"+`
+`, lc.Version)
+	fmt.Println()
 
 	// Global macro environment for assignments and imports
 	var env map[string]string = map[string]string{}
@@ -38,25 +48,37 @@ func main() {
 		}
 
 		line = strings.TrimSpace(line)
-		if line == "exit" || line == "quit" {
-			break
-		}
 		if line == "" {
 			continue
 		}
 
-		lc.ResetFreshCounter()
-
-		// Check for :import command
-		if after, ok := strings.CutPrefix(line, ":import "); ok {
-			filePath := strings.TrimSpace(after)
-			if err := lc.LoadMacrosFromFile(filePath, env); err != nil {
-				fmt.Fprintf(screen, "import error: %v\r\n", err)
+		// Handle commands starting with ':'
+		if line[0] == ':' {
+			command := strings.Split(line, " ")[0]
+			switch command {
+			case ":quit", ":exit", ":q":
+				return
+			case ":import":
+				if after, ok := strings.CutPrefix(line, ":import "); ok {
+					filePath := strings.TrimSpace(after)
+					if err := lc.LoadMacrosFromFile(filePath, env); err != nil {
+						fmt.Fprintf(screen, "import error: %v\r\n", err)
+					}
+					fmt.Fprintf(screen, "\x1b[33msuccessfully imported macros from %s\x1b[0m\r\n", filePath)
+					continue
+				}
+			case ":env":
+				for key, value := range env {
+					fmt.Fprintf(screen, "\x1b[33m%s = %s\x1b[0m\r\n", key, value)
+				}
+				continue
+			default:
+				fmt.Fprintln(screen, "unknown command:", line)
+				continue
 			}
-
-			fmt.Fprintf(screen, "successfully imported macros from %s\r\n", filePath)
-			continue
 		}
+
+		lc.ResetFreshCounter()
 
 		// Check for assignments
 		if strings.Contains(line, "=") {
@@ -71,7 +93,7 @@ func main() {
 
 			exprStr = lc.ExpandMacroStrings(exprStr, env)
 			env[varName] = exprStr
-			fmt.Fprintf(screen, "defined %s\r\n", varName)
+			fmt.Fprintln(screen, "\x1b[33m"+varName+" = "+exprStr+"\x1b[0m")
 			continue
 		}
 
@@ -84,6 +106,6 @@ func main() {
 		result := lc.Normalize(expr, strategy)
 		cleanResult := lc.Normalize(result, lc.NormalOrder)
 
-		fmt.Fprintln(screen, cleanResult.Format())
+		fmt.Fprintln(screen, "\x1b[33m"+cleanResult.Format()+"\x1b[0m")
 	}
 }

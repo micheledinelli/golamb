@@ -1,4 +1,4 @@
-package lc
+package src
 
 type Expr interface {
 	expr()
