@@ -1,4 +1,4 @@
-package src
+package utils
 
 import (
 	"bufio"
@@ -7,12 +7,9 @@ import (
 	"os"
 	"strings"
 	"unicode"
-)
 
-type Config struct {
-	Strategy  RedStrategy
-	BetaSteps bool
-}
+	"github.com/micheledinelli/golamb/common"
+)
 
 func LoadMacrosFromFile(filePath string, env map[string]string) error {
 	file, err := os.Open(filePath)
@@ -35,7 +32,7 @@ func LoadMacrosFromFile(filePath string, env map[string]string) error {
 			exprStr := strings.TrimSpace(parts[1])
 
 			if varName != "" && !strings.ContainsAny(varName, " \t()\\.") {
-				exprStr = ExpandMacroStrings(exprStr, env)
+				exprStr = ExpandMacro(exprStr, env)
 				env[varName] = exprStr
 			}
 		}
@@ -44,7 +41,7 @@ func LoadMacrosFromFile(filePath string, env map[string]string) error {
 	return scanner.Err()
 }
 
-func ExpandMacroStrings(input string, env map[string]string) string {
+func ExpandMacro(input string, env map[string]string) string {
 	for {
 		changed := false
 		for macroName, macroBody := range env {
@@ -79,13 +76,13 @@ func ExpandMacroStrings(input string, env map[string]string) string {
 	return input
 }
 
-func ParseArgs() (config *Config) {
-	config = &Config{}
+func ParseArgs() (config *common.Config) {
+	config = &common.Config{}
 
 	var strategy string
 	var version bool
 
-	flag.StringVar(&strategy, "strategy", "normal", "Evaluation strategy: cbn, cbv, normal")
+	flag.StringVar(&strategy, "strategy", "normal", "Evaluation strategy: cbn, cbv, normal, cbpv")
 	flag.StringVar(&strategy, "s", "normal", "Evaluation strategy (shorthand)")
 
 	flag.BoolVar(&version, "version", false, "Print version information")
@@ -108,23 +105,27 @@ func ParseArgs() (config *Config) {
 	flag.Parse()
 
 	if version {
-		fmt.Printf("GoLamb version %s\n", Version)
+		fmt.Printf("GoLamb version %s\n", common.Version)
 		os.Exit(0)
 	}
 
 	switch strings.ToLower(strategy) {
 	case "cbv", "call-by-value":
-		config.Strategy = CallByValue
+		config.Strategy = common.CallByValue
 		fmt.Println("reduction strategy: call-by-value")
 	case "cbn", "call-by-name":
-		config.Strategy = CallByName
+		config.Strategy = common.CallByName
 		fmt.Println("reduction strategy: call-by-name")
 	case "normal", "normal-order":
-		config.Strategy = NormalOrder
+		config.Strategy = common.NormalOrder
 		fmt.Println("reduction strategy: normal order")
+	case "cbpv", "call-by-push-value":
+		config.Strategy = common.CallByPushValue
+		config.CBPVMode = common.CBPVModeCBV
+		fmt.Println("reduction strategy: call-by-push-value")
 	default:
 		fmt.Printf("unknown strategy %q, defaulting to normal order\n", strategy)
-		config.Strategy = NormalOrder
+		config.Strategy = common.NormalOrder
 	}
 
 	return

@@ -1,6 +1,10 @@
-package src
+package std
 
-import "fmt"
+import (
+	"fmt"
+
+	c "github.com/micheledinelli/golamb/common"
+)
 
 type Parser struct {
 	tokens []Token
@@ -13,7 +17,7 @@ func (p *Parser) advance()       { p.pos++ }
 // Parse converts a string into a lambda expression.
 // It builds an abstract syntax tree (AST) from the input string,
 // which can then be evaluated using the evaluation functions see [Normalize].
-func Parse(input string) (Expr, error) {
+func Parse(input string) (c.Expr, error) {
 	tokens, err := Lex(input)
 	if err != nil {
 		return nil, err
@@ -22,7 +26,7 @@ func Parse(input string) (Expr, error) {
 	return p.parseExpr()
 }
 
-func (p *Parser) parseExpr() (Expr, error) {
+func (p *Parser) parseExpr() (c.Expr, error) {
 	if p.current().Type == LAMBDA {
 		return p.parseLambda()
 	}
@@ -39,7 +43,7 @@ func (p *Parser) parseExpr() (Expr, error) {
 			if err != nil {
 				return nil, err
 			}
-			left = &App{
+			left = &c.App{
 				Fn:  left,
 				Arg: right,
 			}
@@ -49,13 +53,13 @@ func (p *Parser) parseExpr() (Expr, error) {
 	}
 }
 
-func (p *Parser) parseAtom() (Expr, error) {
+func (p *Parser) parseAtom() (c.Expr, error) {
 	tok := p.current()
 
 	switch tok.Type {
 	case IDENT:
 		p.advance()
-		return &Var{Name: tok.Value}, nil
+		return &c.Var{Name: tok.Value}, nil
 
 	case LPAREN:
 		p.advance()
@@ -74,7 +78,7 @@ func (p *Parser) parseAtom() (Expr, error) {
 	}
 }
 
-func (p *Parser) parseLambda() (Expr, error) {
+func (p *Parser) parseLambda() (c.Expr, error) {
 	p.advance()
 
 	if p.current().Type != IDENT {
@@ -93,7 +97,7 @@ func (p *Parser) parseLambda() (Expr, error) {
 		return nil, err
 	}
 
-	return &Abs{
+	return &c.Abs{
 		Param: param,
 		Body:  body,
 	}, nil

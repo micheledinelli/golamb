@@ -6,7 +6,10 @@ import (
 	"os"
 	"strings"
 
-	lc "github.com/micheledinelli/golamb/src"
+	common "github.com/micheledinelli/golamb/common"
+	"github.com/micheledinelli/golamb/src/cbpv"
+	"github.com/micheledinelli/golamb/src/std"
+	utils "github.com/micheledinelli/golamb/src/utils"
 	"golang.org/x/term"
 )
 
@@ -17,7 +20,7 @@ var (
 func main() {
 	var err error
 	var oldState *term.State
-	var config *lc.Config = lc.ParseArgs()
+	var config *common.Config = utils.ParseArgs()
 	var screen *term.Terminal = term.NewTerminal(os.Stdin, "golamb> ")
 
 	PrintWelcome(screen)
@@ -31,9 +34,16 @@ func main() {
 	}
 	defer term.Restore(int(os.Stdin.Fd()), oldState)
 
+	var engine common.Evaluator
+	if config.Strategy == common.CallByPushValue {
+		engine = cbpv.NewCBPVEngine(config)
+	} else {
+		engine = std.NewEngine(config)
+	}
+
 	for {
 		var line string
-		var expr lc.Expr
+		var expr common.Expr
 
 		if line, err = screen.ReadLine(); err != nil {
 			if err == io.EOF {
@@ -59,7 +69,7 @@ func main() {
 			continue
 		}
 
-		lc.ResetFreshCounter()
+		std.ResetFreshCounter()
 
 		// Handle assignments
 		if strings.Contains(line, "=") {
@@ -67,17 +77,20 @@ func main() {
 			continue
 		}
 
-		expandedLine := lc.ExpandMacroStrings(line, env)
-		if expr, err = lc.Parse(expandedLine); err != nil {
+		input := utils.ExpandMacro(line, env)
+		expr, err = std.Parse(input)
+
+		if err != nil {
 			fmt.Fprintln(screen, "parse error:", err)
 			continue
 		}
 
-		result, steps := lc.Normalize(expr, config)
-		normalForm, _ := lc.Normalize(result, &lc.Config{Strategy: lc.NormalOrder, BetaSteps: false})
+		result, steps := engine.EvalSteps(expr)
 
-		fmt.Fprintf(screen, "\x1b[33m%-14s \x1b[0m%s\r\n", "normal form:", normalForm.Format())
-		fmt.Fprintf(screen, "\x1b[31m%-14s \x1b[0m%d\r\n", "β-reductions:", steps)
+		fmt.Fprintf(screen, "\x1b[33m%-14s \x1b[0m%s\r\n", "normal form:", result.Format())
+		if config.BetaSteps {
+			fmt.Fprintf(screen, "\x1b[31m%-14s \x1b[0m%d\r\n", "β-reductions:", steps)
+		}
 	}
 }
 
@@ -89,7 +102,7 @@ func handleCommand(line string, screen *term.Terminal) error {
 	case ":import":
 		if after, ok := strings.CutPrefix(line, ":import "); ok {
 			filePath := strings.TrimSpace(after)
-			if err := lc.LoadMacrosFromFile(filePath, env); err != nil {
+			if err := utils.LoadMacrosFromFile(filePath, env); err != nil {
 				fmt.Fprintf(screen, "import error: %v\r\n", err)
 				return nil
 			}
@@ -117,8 +130,8 @@ func handleAssignment(line string, screen *term.Terminal) {
 		return
 	}
 
-	exprStr = lc.ExpandMacroStrings(exprStr, env)
-	_, err := lc.Parse(exprStr)
+	exprStr = utils.ExpandMacro(exprStr, env)
+	_, err := std.Parse(exprStr)
 	if err != nil {
 		fmt.Fprintln(screen, "invalid macro definition: ", err)
 		return
@@ -136,7 +149,7 @@ func PrintWelcome(screen *term.Terminal) {
 ( (_| | |_| | |/ ___ | | | | |_) )
  \___ |\___/ \_)_____|_|_|_|____/ 
 (_____|`+"\x1b[32m Version %s\x1b[0m"+`
-`, lc.Version)
+`, common.Version)
 	fmt.Println()
 
 }
