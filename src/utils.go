@@ -9,6 +9,11 @@ import (
 	"unicode"
 )
 
+type Config struct {
+	Strategy  RedStrategy
+	BetaSteps bool
+}
+
 func LoadMacrosFromFile(filePath string, env map[string]string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -74,51 +79,52 @@ func ExpandMacroStrings(input string, env map[string]string) string {
 	return input
 }
 
-func ParseArgs() (strategy RedStrategy) {
-	stratFlag := flag.String("strategy", "normal", "evaluation strategy: cbn, cbv, normal")
-	flag.StringVar(stratFlag, "s", "normal", "evaluation strategy (shorthand)")
+func ParseArgs() (config *Config) {
+	config = &Config{}
 
-	versionFlag := flag.Bool("version", false, "print version information")
-	flag.BoolVar(versionFlag, "v", false, "print version information (shorthand)")
+	var strategy string
+	var version bool
+
+	flag.StringVar(&strategy, "strategy", "normal", "Evaluation strategy: cbn, cbv, normal")
+	flag.StringVar(&strategy, "s", "normal", "Evaluation strategy (shorthand)")
+
+	flag.BoolVar(&version, "version", false, "Print version information")
+	flag.BoolVar(&version, "v", false, "Print version information (shorthand)")
+
+	flag.BoolVar(&config.BetaSteps, "beta-steps", false, "Show beta-reduction steps")
+	flag.BoolVar(&config.BetaSteps, "b", false, "Show beta-reduction steps (shorthand)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of GoLamb:\n\n")
 		fmt.Fprintln(flag.CommandLine.Output(), "Options:")
 
-		fmt.Fprintln(flag.CommandLine.Output(), "  -s, --strategy string")
-		fmt.Fprintln(flag.CommandLine.Output(), "        Evaluation strategy: cbn, cbv, normal (default \"normal\")")
-		fmt.Fprintln(flag.CommandLine.Output())
+		flag.PrintDefaults()
 
-		fmt.Fprintln(flag.CommandLine.Output(), "  -v, --version")
-		fmt.Fprintln(flag.CommandLine.Output(), "        Print version information")
-		fmt.Fprintln(flag.CommandLine.Output())
-
-		fmt.Fprintln(flag.CommandLine.Output(), "Examples:")
+		fmt.Fprintln(flag.CommandLine.Output(), "\nExamples:")
 		fmt.Fprintln(flag.CommandLine.Output(), "  ./golamb --strategy=cbn")
-		fmt.Fprintln(flag.CommandLine.Output(), "  ./golamb -s cbv")
+		fmt.Fprintln(flag.CommandLine.Output(), "  ./golamb -s cbv -b")
 	}
 
 	flag.Parse()
 
-	if *versionFlag {
+	if version {
 		fmt.Printf("GoLamb version %s\n", Version)
 		os.Exit(0)
 	}
 
-	strategy = NormalOrder
-	switch strings.ToLower(*stratFlag) {
+	switch strings.ToLower(strategy) {
 	case "cbv", "call-by-value":
-		strategy = CallByValue
-		fmt.Printf("reduction strategy: call-by-value")
+		config.Strategy = CallByValue
+		fmt.Println("reduction strategy: call-by-value")
 	case "cbn", "call-by-name":
-		strategy = CallByName
-		fmt.Printf("reduction strategy: call-by-name")
+		config.Strategy = CallByName
+		fmt.Println("reduction strategy: call-by-name")
 	case "normal", "normal-order":
-		strategy = NormalOrder
-		fmt.Printf("reduction strategy: normal order")
+		config.Strategy = NormalOrder
+		fmt.Println("reduction strategy: normal order")
 	default:
-		fmt.Printf("unknown strategy %q, defaulting to normal order", *stratFlag)
-		strategy = NormalOrder
+		fmt.Printf("unknown strategy %q, defaulting to normal order\n", strategy)
+		config.Strategy = NormalOrder
 	}
 
 	return

@@ -67,7 +67,7 @@ not = \b.b false true
 
 ### Import Macros From a File
 
-Define your macros elsewhere and import them using `:import <file>`. Macros are by convention uppercase. Take a look at [lib.lamb](./lib.lamb).
+Define your macros elsewhere and import them using `:import <file>`. Macros are by convention uppercase. Take a look at [std](./std) file.
 
 ```sh
 ./golamb

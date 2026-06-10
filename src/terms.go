@@ -24,5 +24,5 @@ func (*Abs) expr() {}
 func (*App) expr() {}
 
 func (v *Var) Format() string { return v.Name }
-func (a *Abs) Format() string { return "\\" + a.Param + "." + a.Body.Format() }
+func (a *Abs) Format() string { return "λ" + a.Param + "." + a.Body.Format() }
 func (a *App) Format() string { return "(" + a.Fn.Format() + " " + a.Arg.Format() + ")" }

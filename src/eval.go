@@ -180,13 +180,17 @@ func Step(expr Expr, strat RedStrategy) (Expr, bool) {
 //     (\a.\b.a) t ((\x.x x)(\x.x x)) will reduce to t without getting stuck in an infinite loop.
 //   - If using CallByValue the same expression will get stuck in an infinite
 //     loop trying to reduce the omega combinator.
-func Normalize(expr Expr, strat RedStrategy) Expr {
+func Normalize(expr Expr, config *Config) (res Expr, steps int) {
 	for {
-		next, ok := Step(expr, strat)
+		next, ok := Step(expr, config.Strategy)
 		if !ok {
-			return expr
+			return expr, steps
+		}
+		if config.BetaSteps {
+			fmt.Printf("\x1b[33m|>\x1b[0m %v\r\n", expr.Format())
 		}
 		expr = next
+		steps++
 	}
 }
 
