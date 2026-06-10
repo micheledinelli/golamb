@@ -2,6 +2,7 @@
 
 ![go](https://img.shields.io/badge/Go-1.25-00ADD8.svg?style=plain&logo=Go&logoColor=white)
 [![Go Report Card](https://goreportcard.com/badge/github.com/micheledinelli/golamb)](https://goreportcard.com/report/github.com/micheledinelli/golamb)
+[![Go Tests](https://github.com/micheledinelli/golamb/actions/workflows/tests.yaml/badge.svg)](https://github.com/micheledinelli/golamb/actions/workflows/tests.yaml)
 
 **GoLamb** is an interpreter for the Untyped Lambda Calculus written in Go. It serves as both an interactive playground (REPL) and a micro-compiler for lambda-expressions.
 
