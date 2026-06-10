@@ -12,29 +12,46 @@ import (
 // (true) or if the computation is in normal form (false).
 // It panics if it encounters an invalid state, such as trying to force a
 // non-thunk value.
-func step(comp Computation, stack *Stack) (Computation, bool) {
-	switch c := comp.(type) {
+func (e *CBPVEngine) step(comp Computation, stack *Stack) (Computation, bool) {
+	switch cv := comp.(type) {
 	case *App:
-		stack.Push(c.Arg)
-		return c.Fn, true
+		stack.Push(cv.Arg)
+		return cv.Fn, true
 
 	case *Abs:
 		argVal, ok := stack.Pop()
 		if !ok {
-			return c, false
+			return cv, false
 		}
-		return substitute(c.Body, c.Param, argVal), true
+		if e.Config.CBPVMode == c.CBPVModeCBV {
+			if thunk, ok := argVal.(*Thunk); ok {
+				argVal = e.forceArg(thunk)
+			}
+		}
+		return substitute(cv.Body, cv.Param, argVal), true
 
 	case *Force:
-		if thunk, ok := c.Val.(*Thunk); ok {
+		if thunk, ok := cv.Val.(*Thunk); ok {
 			return thunk.Comp, true
 		}
-		panic(fmt.Sprintf("runtime error: cannot force non-thunk variant %T", c.Val))
+		panic(fmt.Sprintf("runtime error: cannot force non-thunk variant %T", cv.Val))
 
 	case *Return:
-		return c, false
+		return cv, false
 	}
 	return comp, false
+}
+
+func (e *CBPVEngine) forceArg(thunk *Thunk) Value {
+	result, _ := e.EvalSteps(compToExpr(thunk.Comp))
+	compiled := compileToCBPV(result, e.Config.CBPVMode)
+	if ret, ok := compiled.(*Return); ok {
+		return ret.Val
+	}
+	if abs, ok := compiled.(*Abs); ok {
+		return &Thunk{Comp: abs}
+	}
+	return &Thunk{Comp: compiled}
 }
 
 // substitute performs capture-avoiding substitution. It traverses the computation
@@ -43,31 +60,31 @@ func step(comp Computation, stack *Stack) (Computation, bool) {
 // to avoid conflicts with free variables in the replacement.
 // Freshness is obtained by appending a prime (') to the variable name.
 func substitute(comp Computation, target string, replacement Value) Computation {
-	switch c := comp.(type) {
+	switch cv := comp.(type) {
 	case *Return:
-		return &Return{Val: substValue(c.Val, target, replacement)}
+		return &Return{Val: substValue(cv.Val, target, replacement)}
 
 	case *App:
 		return &App{
-			Fn:  substitute(c.Fn, target, replacement),
-			Arg: substValue(c.Arg, target, replacement),
+			Fn:  substitute(cv.Fn, target, replacement),
+			Arg: substValue(cv.Arg, target, replacement),
 		}
 
 	case *Force:
-		return &Force{Val: substValue(c.Val, target, replacement)}
+		return &Force{Val: substValue(cv.Val, target, replacement)}
 
 	case *Abs:
-		if c.Param == target {
-			return c
+		if cv.Param == target {
+			return cv
 		}
-		if _, ok := replacement.(*Var); ok && c.Param == replacement.(*Var).Name {
-			fresh := c.Param + "'"
-			c.Body = substitute(c.Body, c.Param, &Var{Name: fresh})
-			c.Param = fresh
+		if v, ok := replacement.(*Var); ok && cv.Param == v.Name {
+			fresh := cv.Param + "'"
+			cv.Body = substitute(cv.Body, cv.Param, &Var{Name: fresh})
+			cv.Param = fresh
 		}
 		return &Abs{
-			Param: c.Param,
-			Body:  substitute(c.Body, target, replacement),
+			Param: cv.Param,
+			Body:  substitute(cv.Body, target, replacement),
 		}
 	}
 	return comp
@@ -110,22 +127,18 @@ func compToExpr(comp Computation) c.Expr {
 	switch t := comp.(type) {
 	case *Return:
 		return toExpr(t.Val)
-
 	case *Force:
 		return toExpr(t.Val)
-
 	case *Abs:
 		return &c.Abs{
 			Param: t.Param,
 			Body:  compToExpr(t.Body),
 		}
-
 	case *App:
 		return &c.App{
 			Fn:  compToExpr(t.Fn),
 			Arg: toExpr(t.Arg),
 		}
-
 	default:
 		panic(fmt.Sprintf("unknown cbpv computation type during decompilation: %T", comp))
 	}

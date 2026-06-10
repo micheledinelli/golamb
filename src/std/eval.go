@@ -3,10 +3,55 @@ package std
 import (
 	"fmt"
 
+	"github.com/micheledinelli/golamb/common"
 	c "github.com/micheledinelli/golamb/common"
 )
 
 var freshCounter int
+
+// step performs a single reduction step on the given expression according to the specified strategy.
+// It returns the new expression and a boolean indicating whether a reduction was performed.
+//   - For NormalOrder, it reduces the outermost redex first, allowing reductions inside lambdas.
+//   - For CallByName, it reduces the outermost redex first without reducing inside lambdas.
+//   - For CallByValue, it first reduces the function and argument to values before applying the function.
+func (e *Engine) step(expr common.Expr, strat common.Strategy) (common.Expr, bool) {
+	switch t := expr.(type) {
+	case *common.Var:
+		return expr, false
+	case *common.App:
+		if strat == common.CallByValue {
+			if next, ok := e.step(t.Fn, strat); ok {
+				return &common.App{Fn: next, Arg: t.Arg}, true
+			}
+			if next, ok := e.step(t.Arg, strat); ok {
+				return &common.App{Fn: t.Fn, Arg: next}, true
+			}
+			if abs, ok := t.Fn.(*common.Abs); ok {
+				return substitute(abs.Body, abs.Param, t.Arg), true
+			}
+			return expr, false
+		}
+
+		if abs, ok := t.Fn.(*common.Abs); ok {
+			return substitute(abs.Body, abs.Param, t.Arg), true
+		}
+		if next, ok := e.step(t.Fn, strat); ok {
+			return &common.App{Fn: next, Arg: t.Arg}, true
+		}
+		if next, ok := e.step(t.Arg, strat); ok {
+			return &common.App{Fn: t.Fn, Arg: next}, true
+		}
+	case *common.Abs:
+		if strat == common.CallByName || strat == common.CallByValue {
+			return expr, false
+		}
+
+		if next, ok := e.step(t.Body, strat); ok {
+			return &common.Abs{Param: t.Param, Body: next}, true
+		}
+	}
+	return expr, false
+}
 
 // FV returns the set of free variables in an lambda-expression.
 // The set of free variables of a term t, written FV(t), is defined
@@ -122,48 +167,6 @@ func substitute(expr c.Expr, x string, value c.Expr) c.Expr {
 		}
 	}
 	panic("unreachable")
-}
-
-// step performs a single reduction step on the given expression according to the specified strategy.
-// It returns the new expression and a boolean indicating whether a reduction was performed.
-//   - For NormalOrder, it reduces the outermost redex first, allowing reductions inside lambdas.
-//   - For CallByName, it reduces the outermost redex first without reducing inside lambdas.
-//   - For CallByValue, it first reduces the function and argument to values before applying the function.
-func step(expr c.Expr, strat c.Strategy) (c.Expr, bool) {
-	switch t := expr.(type) {
-	case *c.App:
-		if strat == c.CallByValue {
-			if next, ok := step(t.Fn, strat); ok {
-				return &c.App{Fn: next, Arg: t.Arg}, true
-			}
-			if next, ok := step(t.Arg, strat); ok {
-				return &c.App{Fn: t.Fn, Arg: next}, true
-			}
-			if abs, ok := t.Fn.(*c.Abs); ok {
-				return substitute(abs.Body, abs.Param, t.Arg), true
-			}
-			return expr, false
-		}
-
-		if abs, ok := t.Fn.(*c.Abs); ok {
-			return substitute(abs.Body, abs.Param, t.Arg), true
-		}
-		if next, ok := step(t.Fn, strat); ok {
-			return &c.App{Fn: next, Arg: t.Arg}, true
-		}
-		if next, ok := step(t.Arg, strat); ok {
-			return &c.App{Fn: t.Fn, Arg: next}, true
-		}
-	case *c.Abs:
-		if strat == c.CallByName || strat == c.CallByValue {
-			return expr, false
-		}
-
-		if next, ok := step(t.Body, strat); ok {
-			return &c.Abs{Param: t.Param, Body: next}, true
-		}
-	}
-	return expr, false
 }
 
 func freshName(base string) string {

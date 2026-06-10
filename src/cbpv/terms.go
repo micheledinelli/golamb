@@ -25,6 +25,7 @@ type App struct {
 	Fn  Computation
 	Arg Value
 }
+
 type Force struct{ Val Value }
 
 func (*Return) isComputation() {}

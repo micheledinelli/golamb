@@ -30,7 +30,6 @@ func compileCBV(expr c.Expr) Computation {
 				},
 			},
 		}
-
 	case *c.App:
 		return &App{
 			Fn:  &Force{Val: &Thunk{Comp: compileCBV(e.Fn)}},
@@ -56,8 +55,8 @@ func compileCBN(expr c.Expr) Computation {
 
 	case *c.App:
 		return &App{
-			Fn:  compileCBN(e.Fn),
-			Arg: &Thunk{Comp: compileCBN(e.Arg)},
+			Fn:  &Force{Val: &Thunk{Comp: compileCBV(e.Fn)}},
+			Arg: &Thunk{Comp: compileCBV(e.Arg)},
 		}
 	}
 	panic("unknown expression type")

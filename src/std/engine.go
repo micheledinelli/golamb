@@ -3,14 +3,14 @@ package std
 import (
 	"fmt"
 
-	c "github.com/micheledinelli/golamb/common"
+	"github.com/micheledinelli/golamb/common"
 )
 
 type Engine struct {
-	Config *c.Config
+	Config *common.Config
 }
 
-func NewEngine(config *c.Config) *Engine {
+func NewEngine(config *common.Config) *Engine {
 	return &Engine{Config: config}
 }
 
@@ -25,23 +25,26 @@ func NewEngine(config *c.Config) *Engine {
 //   - If using CallByValue the same expression will get stuck in an infinite
 //     loop trying to reduce the omega combinator.
 //
-// See [c.Evaluator]
-func (e *Engine) EvalSteps(expr c.Expr) (c.Expr, int) {
+// See [common.Evaluator]
+func (e *Engine) EvalSteps(expr common.Expr) (common.Expr, int) {
+	ResetFreshCounter()
 	steps := 0
 	for {
-		next, ok := step(expr, e.Config.Strategy)
+		next, ok := e.step(expr, e.Config.Strategy)
 		if !ok {
 			return expr, steps
 		}
-		if e.Config.BetaSteps {
-			fmt.Printf("\x1b[33m|>\x1b[0m %v\r\n", expr.Format())
+		if e.Config.Trace {
+			fmt.Printf("\x1b[32m%d :|>\x1b[0m\x1b[33m %s\x1b[0m\n", steps+1, next.Format())
 		}
 		expr = next
 		steps++
 	}
 }
 
-func (e *Engine) Eval(expr c.Expr) c.Expr {
+// Eval calls [Engine.EvalSteps] and discards the number of steps taken to reduce
+// the expression. It returns the fully reduced expression.
+func (e *Engine) Eval(expr common.Expr) common.Expr {
 	val, _ := e.EvalSteps(expr)
 	return val
 }

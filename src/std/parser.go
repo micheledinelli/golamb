@@ -47,6 +47,15 @@ func (p *Parser) parseExpr() (c.Expr, error) {
 				Fn:  left,
 				Arg: right,
 			}
+		case LAMBDA:
+			right, err := p.parseLambda()
+			if err != nil {
+				return nil, err
+			}
+			left = &c.App{
+				Fn:  left,
+				Arg: right,
+			}
 		default:
 			return left, nil
 		}

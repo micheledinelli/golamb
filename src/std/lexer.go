@@ -42,12 +42,15 @@ func Lex(input string) ([]Token, error) {
 		case c == ' ' || c == '\t' || c == '\n':
 			i++
 
-		case isLetter(c) || isDigit(c):
+		case isLetter(c) || isDigit(c) || c == '_':
+			start := i
+			for i < len(input) && (isLetter(input[i]) || isDigit(input[i]) || input[i] == '_') {
+				i++
+			}
 			tokens = append(tokens, Token{
 				Type:  IDENT,
-				Value: string(c),
+				Value: input[start:i],
 			})
-			i++
 
 		default:
 			return nil, fmt.Errorf("unexpected char %q", c)

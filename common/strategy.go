@@ -9,6 +9,21 @@ const (
 	CallByPushValue                 // Uses the CBPV stack machine for evaluation
 )
 
+func (s Strategy) String() string {
+	switch s {
+	case NormalOrder:
+		return "normal order"
+	case CallByName:
+		return "call-by-name"
+	case CallByValue:
+		return "call-by-value"
+	case CallByPushValue:
+		return "call-by-push-value"
+	default:
+		return "unknown strategy"
+	}
+}
+
 type CBPVMode int
 
 const (

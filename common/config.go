@@ -1,7 +1,7 @@
 package common
 
 type Config struct {
-	Strategy  Strategy
-	BetaSteps bool
-	CBPVMode  CBPVMode
+	Strategy Strategy
+	Trace    bool
+	CBPVMode CBPVMode
 }
