@@ -122,20 +122,21 @@ func handleCommand(line string, rl *readline.Instance) error {
 			strat := strings.TrimSpace(after)
 			switch strings.ToLower(strat) {
 			case "cbv", "call-by-value":
-				runtime.Engine = std.NewEngine(&common.Config{Strategy: common.CallByValue, Trace: config.Trace})
+				config.Strategy = common.CallByValue
 				fmt.Println("reduction strategy: call-by-value")
 			case "cbn", "call-by-name":
-				runtime.Engine = std.NewEngine(&common.Config{Strategy: common.CallByName, Trace: config.Trace})
+				config.Strategy = common.CallByName
 				fmt.Println("reduction strategy: call-by-name")
 			case "normal", "normal-order":
-				runtime.Engine = std.NewEngine(&common.Config{Strategy: common.NormalOrder, Trace: config.Trace})
+				config.Strategy = common.NormalOrder
 				fmt.Println("reduction strategy: normal order")
 			case "cbpv", "call-by-push-value":
-				runtime.Engine = cbpv.NewCBPVEngine(&common.Config{Strategy: common.CallByPushValue, CBPVMode: common.CBPVModeCBV, Trace: config.Trace})
+				config.Strategy = common.CallByPushValue
 				fmt.Println("reduction strategy: call-by-push-value")
 			default:
 				fmt.Printf("unknown strategy %q, no changes made\n", strat)
 			}
+			runtime.Engine = std.NewEngine(config)
 		}
 		return nil
 	}
@@ -168,14 +169,11 @@ func handleAssignment(line string, rl *readline.Instance) {
 }
 
 func setupScreen() (*readline.Instance, error) {
-	fmt.Printf(`
-             _              _     
-  ____  ___ | | _____ ____ | |__  
- / _  |/ _ \| |(____ |    \|  _ \ 
-( (_| | |_| | |/ ___ | | | | |_) )
- \___ |\___/ \_)_____|_|_|_|____/ 
-(_____| `+"\x1b[32mVersion %s\x1b[0m"+`
-
+	fmt.Printf(`         __              _    
+  __ _ __\ \  __ _ _ __ | |__ 
+ / _`+"` "+`/ _ \ \/ _`+"`"+` | '  \| '_ \
+ \__, \___/\_\__,_|_|_|_|_.__/
+ |___/`+"\x1b[32m v.%s\x1b[0m"+`      
 `, common.Version)
 
 	return readline.New("golamb> ")
