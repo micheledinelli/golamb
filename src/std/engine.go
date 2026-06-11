@@ -30,7 +30,7 @@ func (e *Engine) EvalSteps(expr common.Expr) (common.Expr, int) {
 	ResetFreshCounter()
 	steps := 0
 	for {
-		next, ok := e.step(expr, e.Config.Strategy)
+		next, ok := e.step(expr)
 		if !ok {
 			return expr, steps
 		}

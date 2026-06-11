@@ -14,16 +14,18 @@ var freshCounter int
 //   - For NormalOrder, it reduces the outermost redex first, allowing reductions inside lambdas.
 //   - For CallByName, it reduces the outermost redex first without reducing inside lambdas.
 //   - For CallByValue, it first reduces the function and argument to values before applying the function.
-func (e *Engine) step(expr common.Expr, strat common.Strategy) (common.Expr, bool) {
+func (e *Engine) step(expr common.Expr) (common.Expr, bool) {
 	switch t := expr.(type) {
 	case *common.Var:
 		return expr, false
 	case *common.App:
-		if strat == common.CallByValue {
-			if next, ok := e.step(t.Fn, strat); ok {
+		if e.Config.Strategy == common.CallByValue {
+			// For CBV we first reduce the function and argument
+			// to values before function application
+			if next, ok := e.step(t.Fn); ok {
 				return &common.App{Fn: next, Arg: t.Arg}, true
 			}
-			if next, ok := e.step(t.Arg, strat); ok {
+			if next, ok := e.step(t.Arg); ok {
 				return &common.App{Fn: t.Fn, Arg: next}, true
 			}
 			if abs, ok := t.Fn.(*common.Abs); ok {
@@ -32,21 +34,25 @@ func (e *Engine) step(expr common.Expr, strat common.Strategy) (common.Expr, boo
 			return expr, false
 		}
 
+		// For CBN and normal order we try to reduce the
+		// leftmost outermost redex first
 		if abs, ok := t.Fn.(*common.Abs); ok {
 			return substitute(abs.Body, abs.Param, t.Arg), true
 		}
-		if next, ok := e.step(t.Fn, strat); ok {
+		if next, ok := e.step(t.Fn); ok {
 			return &common.App{Fn: next, Arg: t.Arg}, true
 		}
-		if next, ok := e.step(t.Arg, strat); ok {
+		if next, ok := e.step(t.Arg); ok {
 			return &common.App{Fn: t.Fn, Arg: next}, true
 		}
 	case *common.Abs:
-		if strat == common.CallByName || strat == common.CallByValue {
+		// For CBN and CBV we do not reduce inside lambdas
+		if e.Config.Strategy == common.CallByName || e.Config.Strategy == common.CallByValue {
 			return expr, false
 		}
 
-		if next, ok := e.step(t.Body, strat); ok {
+		// For normal order we reduce inside lambdas
+		if next, ok := e.step(t.Body); ok {
 			return &common.Abs{Param: t.Param, Body: next}, true
 		}
 	}
@@ -115,7 +121,7 @@ func rename(e c.Expr, old, fresh string) c.Expr {
 	panic("unreachable")
 }
 
-// substitute is the beta-reduction function. It replaces all free occurrences
+// substitute replaces all free occurrences
 // of variable x in an expression expr with a value.
 // It is defined inductively on the structure of expr as follows:
 //   - substitute(x, x, value) = value
