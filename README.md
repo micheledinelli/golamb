@@ -6,7 +6,7 @@
 
 **GoLamb** is an interpreter for the Untyped Lambda Calculus written in Go. It serves as both an interactive playground (REPL) and a micro-compiler for lambda-expressions.
 
-https://github.com/user-attachments/assets/b1891bda-4d13-424b-afda-9edd55d71def
+https://github.com/user-attachments/assets/8a9efde4-ec20-4dd0-84f4-7718bb5dae20
 
 ## Examples and Syntax
 
